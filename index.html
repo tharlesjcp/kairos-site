@@ -1,11 +1,10 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Somma Kairos</title> 
   <style>
-   
     :root{
       --pad-top: 0px;
       --pad-right: 0px;
@@ -26,12 +25,170 @@
       height: auto;       /* mantém proporção do SVG */
     }
   </style>
+
+  <!-- Estilos do widget (separado do seu CSS) -->
+  <style>
+    .kw{ position:fixed; right:16px; bottom:16px; z-index:9999; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif; }
+    .kw-toggle{
+      border:0; background:#fff; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.15);
+      padding:12px 14px; display:flex; align-items:center; gap:12px; cursor:pointer;
+      transition: transform .12s ease;
+    }
+    .kw-toggle:active{ transform: scale(.98); }
+    .kw-eyes{ display:flex; gap:12px; }
+    .kw-eye{ width:44px; height:44px; background:#fff; border:4px solid #1e293b; border-radius:50%; position:relative; overflow:hidden; }
+    .kw-pupil{ position:absolute; width:16px; height:16px; background:#1e293b; border-radius:50%;
+               left:50%; top:50%; transform:translate(-50%,-50%); transition:transform .05s linear; }
+    .kw-hint{ font-size:18px; opacity:.75; }
+
+    .kw-panel{
+      width:300px; background:#ffffff; border-radius:16px; box-shadow:0 18px 40px rgba(0,0,0,.18);
+      margin-top:10px; padding:14px; border:1px solid rgba(2,6,23,.06);
+      opacity:0; transform: translateY(8px) scale(.98); pointer-events:none;
+      transition: opacity .22s ease, transform .25s ease;
+    }
+    .kw.open .kw-panel{ opacity:1; transform:none; pointer-events:auto; }
+    .kw-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+    .kw-close{ border:0; background:transparent; font-size:16px; cursor:pointer; opacity:.7; }
+    .kw-what{ font-weight:700; }
+    .kw-when{ font-size:14px; color:#334155; margin:4px 0 10px; }
+    .kw-timer{ font:600 18px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; display:flex; gap:8px; margin-bottom:10px; }
+    .kw-timer span{ background:#f1f5f9; padding:6px 8px; border-radius:8px; }
+    .kw-cta{ display:inline-block; text-decoration:none; background:#0ea5e9; color:#fff; padding:8px 10px; border-radius:10px; font-weight:600; }
+    @media (max-width:420px){ .kw{ transform:scale(.9); transform-origin:bottom right; } }
+  </style>
 </head>
 <body>
   <div class="frame">
-
     <img src="Site-programacao-Kairos.svg" alt="Programação Somma - Kairos" />
   </div>
 
+  <!-- =============== KAIROS: Mascote + Contador do Evento Único =============== -->
+  <div class="kw" role="complementary" aria-label="Mascote Kairos com contador">
+    <button class="kw-toggle" aria-expanded="false" title="Abrir contador">
+      <div class="kw-eyes">
+        <div class="kw-eye"><span class="kw-pupil"></span></div>
+        <div class="kw-eye"><span class="kw-pupil"></span></div>
+      </div>
+      <span class="kw-hint">⏱</span>
+    </button>
+
+    <div class="kw-panel" aria-hidden="true">
+      <div class="kw-head">
+        <div>
+          <div class="kw-what">Noite de jogos com os jovens</div>
+          <div class="kw-when" id="kw-when"></div>
+        </div>
+        <button class="kw-close" aria-label="Fechar">✕</button>
+      </div>
+      <div class="kw-timer" aria-live="polite">
+        <span><b id="kw-d">0</b>d</span>
+        <span><b id="kw-h">00</b>h</span>
+        <span><b id="kw-m">00</b>m</span>
+        <span><b id="kw-s">00</b>s</span>
+      </div>
+      <a class="kw-cta" target="_blank" rel="noopener"
+         href="https://www.google.com/maps/dir/?api=1&destination=Igreja%20Presbiteriana%20do%20Rio%20Comprido">
+        Como chegar
+      </a>
+    </div>
+  </div>
+
+  <script>
+  (() => {
+    // ================= CONFIGURE AQUI SE PRECISAR =================
+    // Data do evento (ano, mês-0-indexado, dia, hora, minuto)
+    // 11 de outubro de 2025, 19:00 (horário local do navegador)
+    const EVENT_DATE = new Date(2025, 9, 11, 18, 0, 0);
+    const LOCALE = "pt-BR";
+    // =============================================================
+
+    // Olhos seguindo o cursor/toque
+    const eyes = document.querySelectorAll('.kw-eye');
+    const pupils = document.querySelectorAll('.kw-pupil');
+    const maxOffset = 10;
+
+    function movePupils(x, y){
+      eyes.forEach(eye=>{
+        const r = eye.getBoundingClientRect();
+        const cx = r.left + r.width/2, cy = r.top + r.height/2;
+        const dx = x - cx, dy = y - cy;
+        const ang = Math.atan2(dy, dx);
+        const lim = Math.min(maxOffset, r.width/2 - 10);
+        const tx = Math.cos(ang)*lim, ty = Math.sin(ang)*lim;
+        eye.querySelector('.kw-pupil')
+          .style.transform = `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px))`;
+      });
+    }
+
+    let raf=null;
+    window.addEventListener('pointermove', e=>{
+      if(raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(()=> movePupils(e.clientX, e.clientY));
+    });
+    window.addEventListener('pointerdown', e => movePupils(e.clientX, e.clientY));
+    window.addEventListener('mouseleave', () => pupils.forEach(p => p.style.transform='translate(-50%,-50%)'));
+
+    // Painel + contador com animação
+    const widget = document.querySelector('.kw');
+    const toggleBtn = document.querySelector('.kw-toggle');
+    const panel = document.querySelector('.kw-panel');
+    const closeBtn = document.querySelector('.kw-close');
+    const whenEl = document.getElementById('kw-when');
+    const dEl = document.getElementById('kw-d');
+    const hEl = document.getElementById('kw-h');
+    const mEl = document.getElementById('kw-m');
+    const sEl = document.getElementById('kw-s');
+    let timer = null;
+
+    function formatWhen(dt){
+      const dia = dt.toLocaleDateString(LOCALE, { weekday:'long', day:'2-digit', month:'long' });
+      const hora = dt.toLocaleTimeString(LOCALE, { hour:'2-digit', minute:'2-digit' });
+      return `${dia}, ${hora}`;
+    }
+
+    function tick(){
+      const now = new Date();
+      let diff = Math.max(0, EVENT_DATE - now);
+      const s = Math.floor(diff/1000);
+      const days = Math.floor(s/86400);
+      const hours = Math.floor((s%86400)/3600);
+      const mins = Math.floor((s%3600)/60);
+      const secs = s%60;
+      dEl.textContent = days;
+      hEl.textContent = String(hours).padStart(2,'0');
+      mEl.textContent = String(mins).padStart(2,'0');
+      sEl.textContent = String(secs).padStart(2,'0');
+
+      if (diff === 0){
+        whenEl.textContent = "Evento iniciado!";
+        clearInterval(timer);
+      }
+    }
+
+    function openPanel(){
+      whenEl.textContent = formatWhen(EVENT_DATE);
+      if(timer) clearInterval(timer);
+      tick();
+      timer = setInterval(tick, 1000);
+
+      widget.classList.add('open');
+      panel.setAttribute('aria-hidden', 'false');
+      toggleBtn.setAttribute('aria-expanded', 'true');
+    }
+
+    function closePanel(){
+      widget.classList.remove('open');
+      panel.setAttribute('aria-hidden', 'true');
+      toggleBtn.setAttribute('aria-expanded', 'false');
+      if(timer) clearInterval(timer);
+    }
+
+    toggleBtn.addEventListener('click', () => panel.getAttribute('aria-hidden') === 'true' ? openPanel() : closePanel());
+    closeBtn.addEventListener('click', closePanel);
+    document.addEventListener('keydown', e=>{ if(e.key==='Escape' && panel.getAttribute('aria-hidden') === 'false') closePanel(); });
+  })();
+  </script>
+  <!-- =============== /KAIROS =============== -->
 </body>
 </html>
