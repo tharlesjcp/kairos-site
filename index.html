@@ -2,19 +2,36 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Somma Kairos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Somma Kairos</title> 
   <style>
-    html, body { margin: 0; padding: 0; }
-    body { background: #fff; }
-    /* container opcional só pra limitar a largura em desktops */
-    .wrap { max-width: 1024px; margin: 0 auto; padding: 16px; }
-    img { width: 100%; height: auto; display: block; }
+   
+    :root{
+      --pad-top: 0px;
+      --pad-right: 0px;
+      --pad-bottom: 0px;
+      --pad-left: 0px;
+      --bg: #ffffff; /* cor de fundo da página*/
+    }
+
+    html, body { height: 100%; margin: 0; background: var(--bg); }
+    /* container para controlar “espaços” ao redor */
+    .frame { padding: var(--pad-top) var(--pad-right) var(--pad-bottom) var(--pad-left); }
+
+    /* remove qualquer espaço “fantasma” do <img> */
+    img {
+      display: block;     /* elimina espaço de linha */
+      width: 100vw;       /* ocupa toda a largura da janela */
+      max-width: 100%;    /* evita overflow em mobile */
+      height: auto;       /* mantém proporção do SVG */
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <img src="Site-programacao-Kairos.svg" alt="Página Kairos" />
+  <div class="frame">
+
+    <img src="Site-programacao-Kairos.svg" alt="Programação Somma - Kairos" />
   </div>
+
 </body>
 </html>
