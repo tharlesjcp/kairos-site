@@ -25,10 +25,12 @@
 
   <!-- Estilos do widget -->
   <style>
+    /* wrapper fixo no canto "carrinho" */
     .kw{
       position: fixed; z-index: 9999;
       right: 8px; bottom: 8px;
     }
+    /* safe-area iOS */
     @supports(padding:max(0px)){
       .kw{ 
         right: max(8px, env(safe-area-inset-right));
@@ -69,6 +71,7 @@
     @keyframes kw-bob{ 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-1.5px);} }
     @keyframes kw-blink{ 0%,96%,100%{transform:scaleY(0);} 98%{transform:scaleY(1);} }
 
+    /* painel abre acima do botão */
     .kw-panel{
       position:absolute; right:0; bottom: calc(100% + 10px);
       background:#fff; border-radius:16px; box-shadow:0 18px 40px rgba(0,0,0,.18);
@@ -78,6 +81,7 @@
       transition: opacity .22s ease, transform .25s ease;
     }
     .kw.open .kw-panel{ opacity:1; transform:none; pointer-events:auto; }
+
     .kw-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
     .kw-close{ border:0; background:transparent; font-size:16px; cursor:pointer; opacity:.7; }
     .kw-what{ font-weight:700; }
@@ -91,6 +95,7 @@
       padding:8px 10px; border-radius:10px; font-weight:600; border:0; cursor:pointer;
     }
 
+    /* menor no mobile */
     @media (max-width: 480px){
       .kw{ transform: scale(.9); transform-origin: bottom right; }
       .kw-eye{ width:34px; height:34px; border-width:3px; }
@@ -100,7 +105,7 @@
 </head>
 <body>
   <div class="frame">
-    <!-- Seu SVG original -->
+    <!-- seu SVG -->
     <img src="Site-programacao-Kairos.svg" alt="Programação Somma - Kairos" />
   </div>
 
@@ -131,6 +136,7 @@
       </div>
 
       <div class="kw-actions">
+        <a id="kw-maps" class="kw-btn" target="_blank" rel="noopener">Como chegar</a>
         <a id="kw-gcal" class="kw-btn" target="_blank" rel="noopener">Ad ao Google Calendar</a>
       </div>
     </div>
@@ -139,14 +145,14 @@
   <script>
   (() => {
     // ================== AJUSTE AQUI (Evento) ==================
-    const EVENT_TITLE   = "Noite de jogos com os jovens";
-    const EVENT_DATE    = new Date(2025, 9, 11, 18, 0, 0); // 11/OUT/2025 18:00
+    const EVENT_TITLE        = "Noite de jogos com os jovens";
+    const EVENT_DATE         = new Date(2025, 9, 11, 18, 0, 0); // 11/OUT/2025 18:00
     const EVENT_DURATION_MIN = 150; // duração em minutos
-    const EVENT_LOCATION    = "R. Gonçalves Crespo, 239 - Tijuca, Rio de Janeiro - RJ, Brasil"; // <-- AJUSTE DO END AQUI
-    const EVENT_DETAILS     = "Encontro do grupo SOMMA - noite de jogos com os jovens.";
+    const EVENT_LOCATION     = "R. Gonçalves Crespo, 239 - Tijuca, Rio de Janeiro - RJ, Brasil"; // <-- AJUSTE DE ENDEREÇO AQUI
+    const EVENT_DETAILS      = "Encontro do grupo SOMMA - noite de jogos com os jovens.";
     // ==========================================================
 
-    // Olhos seguindo o cursor/toque
+    // olhos seguindo o cursor/toque
     const eyes = document.querySelectorAll('.kw-eye');
     const pupils = document.querySelectorAll('.kw-pupil');
     const maxOffset = 10;
@@ -171,7 +177,7 @@
     window.addEventListener('pointerdown', e => movePupils(e.clientX, e.clientY));
     window.addEventListener('mouseleave', () => pupils.forEach(p => p.style.transform='translate(-50%,-50%)'));
 
-    // Painel + contador
+    // painel + contador
     const widget = document.querySelector('.kw');
     const toggleBtn = document.querySelector('.kw-toggle');
     const panel = document.querySelector('.kw-panel');
@@ -183,14 +189,15 @@
     const sEl = document.getElementById('kw-s');
 
     function pad(n){ return String(n).padStart(2,'0'); }
+
+    // gera "YYYYMMDDTHHMMSSZ" com base no UTC real da data
     function toUTCStringBasic(dt){
-      const z = new Date(dt.getTime() - dt.getTimezoneOffset()*60000);
-      return z.getUTCFullYear()
-        + pad(z.getUTCMonth()+1)
-        + pad(z.getUTCDate()) + "T"
-        + pad(z.getUTCHours())
-        + pad(z.getUTCMinutes())
-        + pad(z.getUTCSeconds()) + "Z";
+      return dt.getUTCFullYear()
+        + pad(dt.getUTCMonth()+1)
+        + pad(dt.getUTCDate()) + "T"
+        + pad(dt.getUTCHours())
+        + pad(dt.getUTCMinutes())
+        + pad(dt.getUTCSeconds()) + "Z";
     }
 
     function formatWhen(dt){
@@ -202,8 +209,8 @@
     function startTimer(){
       function tick(){
         const now = new Date();
-        let diff = Math.max(0, EVENT_DATE - now);
-        const s = Math.floor(diff/1000);
+        const diffMs = Math.max(0, EVENT_DATE - now);
+        const s = Math.floor(diffMs/1000);
         const days = Math.floor(s/86400);
         const hours = Math.floor((s%86400)/3600);
         const mins = Math.floor((s%3600)/60);
@@ -217,18 +224,24 @@
       return setInterval(tick, 1000);
     }
 
-    // Inicializa textos e link quando abrir
+    // links
     let timer=null;
     const gcalA = document.getElementById('kw-gcal');
+    const mapsA = document.getElementById('kw-maps');
 
     function buildLinks(){
+      // Maps (Google)
+      mapsA.href = "https://www.google.com/maps/dir/?api=1&destination="
+                 + encodeURIComponent(EVENT_LOCATION);
+
+      // Google Calendar
       const startUtc = toUTCStringBasic(EVENT_DATE);
-      const endUtc = toUTCStringBasic(new Date(EVENT_DATE.getTime() + EVENT_DURATION_MIN*60000));
+      const endUtc   = toUTCStringBasic(new Date(EVENT_DATE.getTime() + EVENT_DURATION_MIN*60000));
       const gcalUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE"
-        + "&text=" + encodeURIComponent(EVENT_TITLE)
-        + "&dates=" + startUtc + "/" + endUtc
+        + "&text="     + encodeURIComponent(EVENT_TITLE)
+        + "&dates="    + startUtc + "/" + endUtc
         + "&location=" + encodeURIComponent(EVENT_LOCATION)
-        + "&details=" + encodeURIComponent(EVENT_DETAILS);
+        + "&details="  + encodeURIComponent(EVENT_DETAILS);
       gcalA.href = gcalUrl;
     }
 
@@ -247,6 +260,7 @@
       toggleBtn.setAttribute('aria-expanded', 'false');
       if(timer) clearInterval(timer);
     }
+
     toggleBtn.addEventListener('click', () => panel.getAttribute('aria-hidden') === 'true' ? openPanel() : closePanel());
     closeBtn.addEventListener('click', closePanel);
     document.addEventListener('keydown', e=>{ if(e.key==='Escape' && panel.getAttribute('aria-hidden') === 'false') closePanel(); });
