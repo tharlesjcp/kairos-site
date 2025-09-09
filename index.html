@@ -12,7 +12,6 @@
       --pad-left: 0px;
       --bg: #ffffff; /* cor de fundo da página*/
     }
-
     html, body { height: 100%; margin: 0; background: var(--bg); }
     /* container para controlar “espaços” ao redor */
     .frame { padding: var(--pad-top) var(--pad-right) var(--pad-bottom) var(--pad-left); }
@@ -26,24 +25,67 @@
     }
   </style>
 
-  <!-- Estilos do widget (separado do seu CSS) -->
+  <!-- Estilos do widget -->
   <style>
-    .kw{ position:fixed; right:16px; bottom:16px; z-index:9999; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif; }
+    /* Wrapper fixo no "canto do carrinho" */
+    .kw{
+      position: fixed; z-index: 9999;
+      right: 8px; bottom: 8px;
+    }
+    /* Safe-area para iOS */
+    @supports(padding:max(0px)){
+      .kw{ 
+        right: max(8px, env(safe-area-inset-right));
+        bottom: max(8px, env(safe-area-inset-bottom));
+      }
+    }
+
     .kw-toggle{
-      border:0; background:#fff; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.15);
-      padding:12px 14px; display:flex; align-items:center; gap:12px; cursor:pointer;
+      border: 0; background: #fff; border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.15);
+      display: flex; align-items: center; gap: 12px;
+      cursor: pointer; padding: 10px 12px;
       transition: transform .12s ease;
+      /* balanço sutil */
+      animation: kw-bob 6s ease-in-out infinite;
     }
     .kw-toggle:active{ transform: scale(.98); }
+
     .kw-eyes{ display:flex; gap:12px; }
-    .kw-eye{ width:44px; height:44px; background:#fff; border:4px solid #1e293b; border-radius:50%; position:relative; overflow:hidden; }
-    .kw-pupil{ position:absolute; width:16px; height:16px; background:#1e293b; border-radius:50%;
-               left:50%; top:50%; transform:translate(-50%,-50%); transition:transform .05s linear; }
+    .kw-eye{
+      width: 38px; height: 38px;
+      background:#fff; border:4px solid #1e293b; border-radius:50%;
+      position:relative; overflow:hidden;
+    }
+    .kw-pupil{
+      position:absolute; width:14px; height:14px; background:#1e293b; border-radius:50%;
+      left:50%; top:50%; transform:translate(-50%,-50%); transition:transform .05s linear;
+    }
     .kw-hint{ font-size:18px; opacity:.75; }
 
+    /* piscadinha (pálpebra) */
+    .kw-eye::after{
+      content:""; position:absolute; inset:0; background:#fff; border-radius:50%;
+      transform-origin: top; transform: scaleY(0);
+      animation: kw-blink 7s infinite;
+    }
+    .kw-eye:nth-child(2)::after{ animation-delay: 3.2s; }
+
+    @keyframes kw-bob{
+      0%,100%{ transform: translateY(0); }
+      50%{ transform: translateY(-1.5px); }
+    }
+    @keyframes kw-blink{
+      0%, 96%, 100% { transform: scaleY(0); }
+      98% { transform: scaleY(1); }
+    }
+
+    /* Painel abre acima do botão (porque estamos no bottom) */
     .kw-panel{
-      width:300px; background:#ffffff; border-radius:16px; box-shadow:0 18px 40px rgba(0,0,0,.18);
-      margin-top:10px; padding:14px; border:1px solid rgba(2,6,23,.06);
+      position:absolute; right:0; bottom: calc(100% + 10px);
+      background:#fff; border-radius:16px; box-shadow:0 18px 40px rgba(0,0,0,.18);
+      padding:14px; border:1px solid rgba(2,6,23,.06);
+      min-width: 260px;
       opacity:0; transform: translateY(8px) scale(.98); pointer-events:none;
       transition: opacity .22s ease, transform .25s ease;
     }
@@ -54,16 +96,29 @@
     .kw-when{ font-size:14px; color:#334155; margin:4px 0 10px; }
     .kw-timer{ font:600 18px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; display:flex; gap:8px; margin-bottom:10px; }
     .kw-timer span{ background:#f1f5f9; padding:6px 8px; border-radius:8px; }
-    .kw-cta{ display:inline-block; text-decoration:none; background:#0ea5e9; color:#fff; padding:8px 10px; border-radius:10px; font-weight:600; }
-    @media (max-width:420px){ .kw{ transform:scale(.9); transform-origin:bottom right; } }
+
+    .kw-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+    .kw-btn{
+      display:inline-block; text-decoration:none; background:#0ea5e9; color:#fff;
+      padding:8px 10px; border-radius:10px; font-weight:600; border:0; cursor:pointer;
+    }
+    .kw-btn--alt{ background:#334155; }
+
+    /* Menor em telas pequenas */
+    @media (max-width: 480px){
+      .kw{ transform: scale(.9); transform-origin: bottom right; }
+      .kw-eye{ width:34px; height:34px; border-width:3px; }
+      .kw-pupil{ width:12px; height:12px; }
+    }
   </style>
 </head>
 <body>
   <div class="frame">
+    <!-- Seu SVG original -->
     <img src="Site-programacao-Kairos.svg" alt="Programação Somma - Kairos" />
   </div>
 
-  <!-- =============== KAIROS: Mascote + Contador do Evento Único =============== -->
+  <!-- =============== KAIROS: Mascote + Contador (evento único) =============== -->
   <div class="kw" role="complementary" aria-label="Mascote Kairos com contador">
     <button class="kw-toggle" aria-expanded="false" title="Abrir contador">
       <div class="kw-eyes">
@@ -81,27 +136,32 @@
         </div>
         <button class="kw-close" aria-label="Fechar">✕</button>
       </div>
+
       <div class="kw-timer" aria-live="polite">
         <span><b id="kw-d">0</b>d</span>
         <span><b id="kw-h">00</b>h</span>
         <span><b id="kw-m">00</b>m</span>
         <span><b id="kw-s">00</b>s</span>
       </div>
-      <a class="kw-cta" target="_blank" rel="noopener"
-         href="https://www.google.com/maps/dir/?api=1&destination=Igreja%20Presbiteriana%20do%20Rio%20Comprido">
-        Como chegar
-      </a>
+
+      <div class="kw-actions">
+        <a id="kw-maps" class="kw-btn" target="_blank" rel="noopener">Como chegar</a>
+        <a id="kw-gcal" class="kw-btn kw-btn--alt" target="_blank" rel="noopener">Google Calendar</a>
+        <button id="kw-ics" class="kw-btn" type="button">Adicionar (.ics)</button>
+      </div>
     </div>
   </div>
 
   <script>
   (() => {
-    // ================= CONFIGURE AQUI SE PRECISAR =================
-    // Data do evento (ano, mês-0-indexado, dia, hora, minuto)
-    // 11 de outubro de 2025, 19:00 (horário local do navegador)
-    const EVENT_DATE = new Date(2025, 9, 11, 18, 0, 0);
-    const LOCALE = "pt-BR";
-    // =============================================================
+    // ================== AJUSTE AQUI (Evento) ==================
+    // Data do evento (ano, mês 0-jan, dia, hora, minuto)
+    const EVENT_TITLE   = "Noite de jogos com os jovens";
+    const EVENT_DATE    = new Date(2025, 9, 11, 18, 0, 0); // 11/OUT/2025 18:00
+    const EVENT_DURATION_MIN = 150; // duração em minutos (ex.: 2h30 = 150)
+    const EVENT_LOCATION    = "R. Gonçalves Crespo, 239 - Tijuca, Rio de Janeiro - RJ, Brasil"; // <-- AJUSTE AQUI
+    const EVENT_DETAILS     = "Encontro do grupo SOMMA - noite de jogos com os jovens.";
+    // ==========================================================
 
     // Olhos seguindo o cursor/toque
     const eyes = document.querySelectorAll('.kw-eye');
@@ -120,7 +180,6 @@
           .style.transform = `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px))`;
       });
     }
-
     let raf=null;
     window.addEventListener('pointermove', e=>{
       if(raf) cancelAnimationFrame(raf);
@@ -129,7 +188,7 @@
     window.addEventListener('pointerdown', e => movePupils(e.clientX, e.clientY));
     window.addEventListener('mouseleave', () => pupils.forEach(p => p.style.transform='translate(-50%,-50%)'));
 
-    // Painel + contador com animação
+    // Painel + contador
     const widget = document.querySelector('.kw');
     const toggleBtn = document.querySelector('.kw-toggle');
     const panel = document.querySelector('.kw-panel');
@@ -139,54 +198,111 @@
     const hEl = document.getElementById('kw-h');
     const mEl = document.getElementById('kw-m');
     const sEl = document.getElementById('kw-s');
-    let timer = null;
+
+    function pad(n){ return String(n).padStart(2,'0'); }
+    function toUTCStringBasic(dt){
+      // YYYYMMDDTHHMMSSZ
+      const z = new Date(dt.getTime() - dt.getTimezoneOffset()*60000);
+      return z.getUTCFullYear() +
+             pad(z.getUTCMonth()+1) +
+             pad(z.getUTCDate()) + "T" +
+             pad(z.getUTCHours()) +
+             pad(z.getUTCMinutes()) +
+             pad(z.getUTCSeconds()) + "Z";
+    }
 
     function formatWhen(dt){
-      const dia = dt.toLocaleDateString(LOCALE, { weekday:'long', day:'2-digit', month:'long' });
-      const hora = dt.toLocaleTimeString(LOCALE, { hour:'2-digit', minute:'2-digit' });
+      const dia = dt.toLocaleDateString("pt-BR", { weekday:'long', day:'2-digit', month:'long' });
+      const hora = dt.toLocaleTimeString("pt-BR", { hour:'2-digit', minute:'2-digit' });
       return `${dia}, ${hora}`;
     }
 
-    function tick(){
-      const now = new Date();
-      let diff = Math.max(0, EVENT_DATE - now);
-      const s = Math.floor(diff/1000);
-      const days = Math.floor(s/86400);
-      const hours = Math.floor((s%86400)/3600);
-      const mins = Math.floor((s%3600)/60);
-      const secs = s%60;
-      dEl.textContent = days;
-      hEl.textContent = String(hours).padStart(2,'0');
-      mEl.textContent = String(mins).padStart(2,'0');
-      sEl.textContent = String(secs).padStart(2,'0');
-
-      if (diff === 0){
-        whenEl.textContent = "Evento iniciado!";
-        clearInterval(timer);
+    function startTimer(){
+      function tick(){
+        const now = new Date();
+        let diff = Math.max(0, EVENT_DATE - now);
+        const s = Math.floor(diff/1000);
+        const days = Math.floor(s/86400);
+        const hours = Math.floor((s%86400)/3600);
+        const mins = Math.floor((s%3600)/60);
+        const secs = s%60;
+        dEl.textContent = days;
+        hEl.textContent = pad(hours);
+        mEl.textContent = pad(mins);
+        sEl.textContent = pad(secs);
       }
+      tick();
+      return setInterval(tick, 1000);
     }
 
+    // Inicializa textos e links quando abrir
+    let timer=null;
     function openPanel(){
       whenEl.textContent = formatWhen(EVENT_DATE);
       if(timer) clearInterval(timer);
-      tick();
-      timer = setInterval(tick, 1000);
-
+      timer = startTimer();
       widget.classList.add('open');
       panel.setAttribute('aria-hidden', 'false');
       toggleBtn.setAttribute('aria-expanded', 'true');
+      buildLinks();
     }
-
     function closePanel(){
       widget.classList.remove('open');
       panel.setAttribute('aria-hidden', 'true');
       toggleBtn.setAttribute('aria-expanded', 'false');
       if(timer) clearInterval(timer);
     }
-
     toggleBtn.addEventListener('click', () => panel.getAttribute('aria-hidden') === 'true' ? openPanel() : closePanel());
     closeBtn.addEventListener('click', closePanel);
     document.addEventListener('keydown', e=>{ if(e.key==='Escape' && panel.getAttribute('aria-hidden') === 'false') closePanel(); });
+
+    // Links dinâmicos: Maps, Google Calendar e ICS
+    const mapsA = document.getElementById('kw-maps');
+    const gcalA = document.getElementById('kw-gcal');
+    const icsBtn = document.getElementById('kw-ics');
+
+    function buildLinks(){
+      // MAPS: usa o endereço fornecido
+      mapsA.href = "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(EVENT_LOCATION);
+
+      // Google Calendar
+      const startUtc = toUTCStringBasic(EVENT_DATE);
+      const endUtc = toUTCStringBasic(new Date(EVENT_DATE.getTime() + EVENT_DURATION_MIN*60000));
+      const gcalUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE"
+        + "&text=" + encodeURIComponent(EVENT_TITLE)
+        + "&dates=" + startUtc + "/" + endUtc
+        + "&location=" + encodeURIComponent(EVENT_LOCATION)
+        + "&details=" + encodeURIComponent(EVENT_DETAILS);
+      gcalA.href = gcalUrl;
+
+      // ICS (funciona no iOS/Android/desktop)
+      icsBtn.onclick = () => {
+        const dtstamp = toUTCStringBasic(new Date());
+        const uid = "kairos-" + Date.now() + "@somma";
+        const ics =
+`BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Kairos Widget//EN
+BEGIN:VEVENT
+UID:${uid}
+DTSTAMP:${dtstamp}
+DTSTART:${startUtc}
+DTEND:${endUtc}
+SUMMARY:${EVENT_TITLE}
+LOCATION:${EVENT_LOCATION}
+DESCRIPTION:${EVENT_DETAILS}
+END:VEVENT
+END:VCALENDAR`;
+        const blob = new Blob([ics], {type: "text/calendar;charset=utf-8"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "evento-kairos.ics";
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
+      };
+    }
   })();
   </script>
   <!-- =============== /KAIROS =============== -->
